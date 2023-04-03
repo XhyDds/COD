@@ -1,0 +1,14 @@
+"filename", "language", "Verilog", "comment", "blank", "total"
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\ALU.v", "Verilog", 97, 21, 16, 134
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\Adder32.v", "Verilog", 39, 20, 8, 67
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\Adder8.v", "Verilog", 33, 19, 7, 59
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\CPU.v", "Verilog", 167, 21, 23, 211
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\Comparer.v", "Verilog", 40, 19, 11, 70
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\Controller.v", "Verilog", 372, 31, 30, 433
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\EXTer.v", "Verilog", 17, 19, 4, 40
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\ImmGen.v", "Verilog", 20, 19, 6, 45
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\PC_Controller.v", "Verilog", 57, 19, 12, 88
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\RegisterFile.v", "Verilog", 16, 20, 5, 41
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\Shifter.v", "Verilog", 65, 20, 6, 91
+"e:\VivadoProjects\cod\Lab3\Lab3.srcs\sources_1\new\Suber.v", "Verilog", 15, 19, 6, 40
+"Total", "-", 938, 247, 134, 1319
