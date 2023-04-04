@@ -30,20 +30,20 @@ module Controller(
     input               clk     ,
     input               rstn    ,
 
-    output reg [2:0]    branch_e    ,
+    output reg [2:0]    branch    ,
     output reg          MemRead_m   ,
     output reg          MemWrite_m  ,
     output reg          MemtoReg_m  ,
-    output reg [2:0]    ALUOP_e     ,
-    output reg          ALUSrc1_e   ,       // ?????
-    output reg [1:0]    ALUSrc2_e   ,       // ?????
-    output reg          uors_e      ,//有无符号数比较
+    output reg [2:0]    ALUOP     ,
+    output reg          ALUSrc1   ,       // ?????
+    output reg [1:0]    ALUSrc2   ,       // ?????
+    output reg          uors      ,//有无符号数比较
 
-    // output reg          RegWrite_w  ,
-    output reg          RegWrite_m  ,
+    output reg          RegWrite_w  ,
+    // output reg          RegWrite_m  ,
 
     output reg [2:0]    extmode1_m  ,
-    output reg [2:0]    extmode2_e  ,
+    output reg [2:0]    extmode2  ,
     
     output reg [2:0]    mode        ,
 
@@ -104,37 +104,37 @@ module Controller(
     parameter SW       = 3'b010;
 //
 
-    reg [2:0]       branch      ;
+    // reg [2:0]       branch      ;
     reg             MemRead     ;
     reg             MemWrite    ;
     reg             MemtoReg    ;
-    reg [2:0]       ALUOP       ;
-    reg             ALUSrc1     ;       // ?????
-    reg [1:0]       ALUSrc2     ;       // ?????
-    reg             uors        ;//有无符号数比较
+    // reg [2:0]       ALUOP       ;
+    // reg             ALUSrc1     ;       // ?????
+    // reg [1:0]       ALUSrc2     ;       // ?????
+    // reg             uors        ;//有无符号数比较
     reg             RegWrite    ;
     reg [2:0]       extmode1    ;
-    reg [2:0]       extmode2    ;
+    // reg [2:0]       extmode2    ;
 
 
-    // reg [2 :0]      branch_e    ;
-    reg             MemRead_e   ;
+    // reg [2 :0]      branch    ;
+    // reg             MemRead   ;
     // reg             MemRead_m   ;
-    reg             MemWrite_e  ;
+    // reg             MemWrite  ;
     // reg             MemWrite_m  ;
-    reg             MemtoReg_e  ;
+    // reg             MemtoReg  ;
     // reg             MemtoReg_m  ;
-    // reg [2 :0]      ALUOP_e     ;
-    // reg             ALUSrc1_e   ;
-    // reg [1 :0]      ALUSrc2_e   ;
-    // reg             uors_e      ;
-    reg             RegWrite_e  ;
-    // reg             RegWrite_m  ;
+    // reg [2 :0]      ALUOP     ;
+    // reg             ALUSrc1   ;
+    // reg [1 :0]      ALUSrc2   ;
+    // reg             uors      ;
+    // reg             RegWrite  ;
+    reg             RegWrite_m  ;
     // reg             RegWrite_w  ;
-    reg [2 :0]      extmode1_e  ;
+    // reg [2 :0]      extmode1  ;
     // reg [2 :0]      extmode1_m  ;
-    // reg [2 :0]      extmode2_e  ;
-    reg             sp_sign_e   ; 
+    // reg [2 :0]      extmode2  ;
+    // reg             sp_sign   ; 
 
     //译码
     always @(*) begin
@@ -370,23 +370,12 @@ module Controller(
 
     //ctl数据流水
     always @(posedge clk) begin
-        branch_e    <= branch       ;
-        MemRead_e   <= MemRead      ;
-        MemRead_m   <= MemRead_e    ;
-        MemWrite_e  <= MemWrite     ;
-        MemWrite_m  <= MemWrite_e   ;
-        MemtoReg_e  <= MemtoReg     ;
-        MemtoReg_m  <= MemtoReg_e   ;
-        ALUOP_e     <= ALUOP        ;
-        ALUSrc1_e   <= ALUSrc1      ;
-        ALUSrc2_e   <= ALUSrc2      ;
-        uors_e      <= uors         ;
-        RegWrite_e  <= RegWrite     ;
-        RegWrite_m  <= RegWrite_e   ;
-        // RegWrite_w  <= RegWrite_m   ;
-        extmode1_e  <= extmode1     ;
-        extmode1_m  <= extmode1_e   ;
-        extmode2_e  <= extmode2     ;
+        MemRead_m   <= MemRead    ;
+        MemWrite_m  <= MemWrite   ;
+        MemtoReg_m  <= MemtoReg   ;
+        RegWrite_m  <= RegWrite   ;
+        RegWrite_w  <= RegWrite_m   ;
+        extmode1_m  <= extmode1   ;
         sp_sign     <= funct7       ;
     end
 endmodule
