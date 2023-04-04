@@ -63,7 +63,7 @@ module Comparer(
         end
     end
 
-    assign ur={ul,ul|ug,ug};
-    assign sr={sl,sl|sg,sg};
+    assign ur={ul,~(ul|ug),ug};
+    assign sr={sl,~(sl|sg),sg};
     
 endmodule

@@ -19,7 +19,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
+//pc同步更新器
 module PC_Controller(
     input [31:0]        imm     ,
     input [2:0]         zero    ,
@@ -38,7 +38,12 @@ module PC_Controller(
 
     wire [31:0] tpc;
     wire [31:0] npc1;
-    wire [31:0] npc2;
+    wire [31:0] npc2_0;
+    reg  [31:0] npc2;
+
+    always @(posedge clk) begin
+        npc2<=npc2_0;
+    end
 
     always @(*) begin
         case (PCSrc)
@@ -67,9 +72,9 @@ module PC_Controller(
 
     Adder32 add2(
         .a      (tpc),
-        .b      ({imm[30:0],1'b0}),
+        .b      (imm[31:0]),
         .ci     (1'b0),
-        .s      (npc2),
+        .s      (npc2_0),
         .co     ()
     );
 

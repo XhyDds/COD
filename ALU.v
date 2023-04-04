@@ -25,8 +25,8 @@ module ALU(
     input   [31:0]      b0      ,
     input   [31:0]      imm     ,
     input   [31:0]      pc      ,
-    input   [1:0]       ALUSrc1 ,
-    input   [1:0]       ALUSrc2 ,
+    input   [1:0]       ALUSrc1 ,   //B
+    input   [1:0]       ALUSrc2 ,   //A
     input   [2:0]       ALUOP   ,
     input               sp_sign ,
     input               uors    ,
@@ -110,7 +110,8 @@ module ALU(
                 if(sp_sign) result=sub_s;
                 else result=add_s;
             end
-            SLL :   result=lshift_s;
+            // SLL :   result=lshift_s;
+            SLL :   result=a<<2;
             SLT :   result=sr[2];
             SLTU:   result=ur[2];
             XOR :   result=a^b;

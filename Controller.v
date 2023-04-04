@@ -35,7 +35,7 @@ module Controller(
     output reg [2:0]    ALUOP   ,
     output reg [1:0]    ALUSrc1 ,
     output reg [1:0]    ALUSrc2 ,
-    output reg          PCSrc   ,//决定来自原始pc或alu计算结果
+    output reg [1:0]    PCSrc   ,//决定来自原始pc或alu计算结果
     output reg          uors    ,//有无符号数比较
 
     output reg          RegWrite,
@@ -46,7 +46,9 @@ module Controller(
 
     output reg [2:0]    mode    ,
     output reg [2:0]    extmode1,
-    output reg [2:0]    extmode2
+    output reg [2:0]    extmode2,
+
+    output reg  stop
 
     );
 
@@ -60,6 +62,8 @@ module Controller(
     parameter BEQ_fml  = 7'b1100011;
     parameter LB_fml   = 7'b0000011;
     parameter SB_fml   = 7'b0100011;
+
+    parameter ECALL = 7'b1110011;
 
 //funct3
     parameter ADDI     = 3'b000;
@@ -104,8 +108,9 @@ module Controller(
     reg [2:0] state;
     reg [2:0] nstate;
 
+
     always @(posedge clk) begin
-        if(rstn) begin
+        if(!rstn) begin
             state   <=0;
 
             branch  <=0;
@@ -115,12 +120,8 @@ module Controller(
             ALUOP   <=0;
             ALUSrc1 <=2'b0;
             ALUSrc2 <=2'b0;
-            RegWrite<=0;
-            PCLoad  <=0;
-            IRLoad  <=0;
-            YLoad   <=0;
-            MDLoad  <=0;
-            mode    <=0;
+            
+            stop<=0;
         end
         else begin
             state<=nstate;
@@ -133,13 +134,8 @@ module Controller(
                     ALUOP   <=0;
                     ALUSrc1 <=2'b0;
                     ALUSrc2 <=2'b0;
-                    mode    <=0;
 
-                    RegWrite<=1;
-                    PCLoad  <=0;
-                    IRLoad  <=0;
-                    YLoad   <=0;
-                    MDLoad  <=0;
+                    stop<=0;
                 end
                 3'b1:   begin   //译码与取操作数
                     branch  <=0;
@@ -150,50 +146,16 @@ module Controller(
                     ALUSrc1 <=2'b0;
                     ALUSrc2 <=2'b0;
 
-                    RegWrite<=0;
-                    PCLoad  <=0;
-                    IRLoad  <=1;
-                    YLoad   <=0;
-                    MDLoad  <=0;
-
-                    case (opcode)
-                        ADDI_fml:begin
-                            case (funct3)
-                                ADDI : mode<=3'b1;
-                                SLLI : mode<=3'b10;
-                                SLTI : mode<=3'b1;
-                                SLTIU: mode<=3'b1;
-                                XORI : mode<=3'b1;
-                                SRLI : mode<=3'b10;
-                                // SRAI : mode<=3'b10;
-                                ORI  : mode<=3'b1;
-                                ANDI : mode<=3'b1;
-                                default: mode<=3'b0;
-                            endcase
-                        end
-                        ADD_fml :mode<=3'b0;
-                        LUI     :mode<=3'b11;
-                        AUIPC   :mode<=3'b11;
-                        JAL     :mode<=3'b100;
-                        JALR    :mode<=3'b1;
-                        BEQ_fml :mode<=3'b101;
-                        LB_fml  :mode<=3'b1;
-                        SB_fml  :mode<=3'b110;
-                        default :mode<=3'b0;
-                    endcase
+                    if(opcode==ECALL) begin
+                        stop<=1;
+                    end
                 end
                 3'b10:  begin   //计算
                     branch  <=0;
                     MemRead <=0;
                     MemWrite<=0;
                     MemtoReg<=0;
-                    mode    <=0;
-
-                    RegWrite<=0;
-                    PCLoad  <=0;
-                    IRLoad  <=0;
-                    YLoad   <=0;
-                    MDLoad  <=0;
+                    
 
                     case (opcode)
                         ADDI_fml:begin
@@ -271,13 +233,7 @@ module Controller(
                     ALUOP   <=0;
                     ALUSrc1 <=2'b0;
                     ALUSrc2 <=2'b0;
-                    mode    <=0;
-
-                    RegWrite<=0;
-                    PCLoad  <=0;
-                    IRLoad  <=0;
-                    YLoad   <=1;
-                    MDLoad  <=0;
+                    
 
                     case (opcode)
                         //LUI     
@@ -375,17 +331,12 @@ module Controller(
                     branch  <=0;
                     MemRead <=0;
                     MemWrite<=0;
-                    MemtoReg<=1;
+                    MemtoReg<=0;
                     ALUOP   <=0;
                     ALUSrc1 <=2'b0;
                     ALUSrc2 <=2'b0;
-                    mode    <=0;
+                    
 
-                    RegWrite<=0;
-                    PCLoad  <=1;
-                    IRLoad  <=0;
-                    YLoad   <=0;
-                    MDLoad  <=1;
                 end
                 default: begin
                     branch  <=0;
@@ -395,38 +346,109 @@ module Controller(
                     ALUOP   <=0;
                     ALUSrc1 <=2'b0;
                     ALUSrc2 <=2'b0;
-                    mode    <=0;
+                    
 
-                    RegWrite<=0;
-                    PCLoad  <=0;
-                    IRLoad  <=0;
-                    YLoad   <=0;
-                    MDLoad  <=0;
                 end
             endcase
         end
     end
 
     always @(*) begin
+        if(!stop) begin  
         case (state)
             3'b0:   begin   //取指令
                 nstate=3'b1;
+                RegWrite =0;
+                PCLoad   =0;
+                IRLoad   =1;
+                YLoad    =0;
+                MDLoad   =0;
+
+                mode=3'b0;
             end
             3'b1:   begin   //译码与取操作数
                 nstate=3'b10;
+                RegWrite =0;
+                PCLoad   =0;
+                IRLoad   =0;
+                YLoad    =0;
+                MDLoad   =0;
+
+                case (opcode)
+                    ADDI_fml:begin
+                            case (funct3)
+                                ADDI : mode=3'b1;
+                                SLLI : mode=3'b10;
+                                SLTI : mode=3'b1;
+                                SLTIU: mode=3'b1;
+                                XORI : mode=3'b1;
+                                SRLI : mode=3'b10;
+                                // SRAI : mode=3'b10;
+                                ORI  : mode=3'b1;
+                                ANDI : mode=3'b1;
+                                default: mode=3'b0;
+                            endcase
+                    end
+                    ADD_fml :mode=3'b0;
+                    LUI     :mode=3'b11;
+                    AUIPC   :mode=3'b11;
+                    JAL     :mode=3'b100;
+                    JALR    :mode=3'b1;
+                    BEQ_fml :mode=3'b101;
+                    LB_fml  :mode=3'b1;
+                    SB_fml  :mode=3'b110;
+                    default :mode=3'b0;
+                endcase
             end
             3'b10:  begin   //计算
                 nstate=3'b11;
+                RegWrite =0;
+                PCLoad   =0;
+                IRLoad   =0;
+                YLoad    =1;
+                MDLoad   =0;
+
+                mode=3'b0;
             end
             3'b11:  begin   //访存
                 nstate=3'b100;
+                RegWrite =0;
+                PCLoad   =1;
+                IRLoad   =0;
+                YLoad    =0;
+                MDLoad   =1;
+
+                mode=3'b0;
             end
             3'b100:  begin  //写回
                 nstate=3'b0;
+                PCLoad   =0;
+                IRLoad   =0;
+                YLoad    =0;
+                MDLoad   =0;
+
+                mode=3'b0;
+
+                case (opcode)
+                    BEQ_fml:RegWrite=1'b0;
+                    SB_fml: RegWrite=1'b0;
+                    default: RegWrite=1'b1;
+                endcase
             end
             default: begin
                 nstate=3'b0;
+                RegWrite =0;
+                PCLoad   =0;
+                IRLoad   =0;
+                YLoad    =0;
+                MDLoad   =0;
+
+                mode=3'b0;
             end
         endcase
+        end
+        else begin
+            nstate=3'b1;
+        end
     end
 endmodule

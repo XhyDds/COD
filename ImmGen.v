@@ -28,16 +28,31 @@ module ImmGen(
     output reg [31:0]   imm 
     );
 
-    always @(posedge clk) begin
+    wire a;
+    assign a=inst[31];
+
+    always @(*) begin
         case (mode)
-            3'b0:   imm<=0;
-            3'b1:   imm<={20*{inst[31]},inst[31:20]} ;                                   //imm[11:0],ADDI
-            3'b10:   imm<={27*{1'b0},inst[24:20]};                                        //shamt,SLLI
-            3'b11:  imm<={inst[31:12],12*{1'b0}};                                        //imm[31:12],LUI
-            3'b100:  imm<={11*{inst[31]},inst[31],inst[19:12],inst[20],inst[30:21],1'b0}; //JAL
-            3'b101: imm<={19*{inst[31]},inst[31],inst[7],inst[30:25],inst[11:8],1'b0};   //BEQ
-            3'b110: imm<={20*{inst[31],inst[31:25],inst[11:7]}};                         //SB
-            default:imm<=0;
+            3'b0:   imm=32'b0;
+            3'b1:   begin                                                               //imm[11:0],ADDI
+                if(inst[31])  imm={20'hfffff,inst[31:20]} ;   
+                else          imm={20'h00000,inst[31:20]} ;   
+            end 
+            3'b10:  imm={27*{1'b0},inst[24:20]};                                        //shamt,SLLI
+            3'b11:  imm={inst[31:12],12*{1'b0}};                                        //imm[31:12],LUI
+            3'b100: begin                                                               //JAL
+                if(inst[31])  imm={11'h7ff,inst[31],inst[19:12],inst[20],inst[30:21],1'b0};
+                else imm={11'h000,inst[31],inst[19:12],inst[20],inst[30:21],1'b0};
+            end 
+            3'b101: begin                                                               //BEQ
+                if(inst[31]) imm={19'h7ffff,inst[31],inst[7],inst[30:25],inst[11:8],1'b0};   
+                else imm={19'h00000,inst[31],inst[7],inst[30:25],inst[11:8],1'b0};   
+            end 
+            3'b110: begin                     //SB
+                if(inst[31]) imm={20'hfffff,inst[31:25],inst[11:7]};    
+                else         imm={20'h00000,inst[31:25],inst[11:7]};    
+            end
+            default:imm=32'b0;
         endcase
     end
 

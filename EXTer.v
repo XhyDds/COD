@@ -29,9 +29,15 @@ module EXTer(
     always @(*) begin
         case (mode)
             3'b000: extword=originword;
-            3'b001: extword={24*{originword[7]},originword[7:0]};
+            3'b001: begin
+                if(originword[7])  extword={24'hffffff,originword[7:0]};
+                else               extword={24'h000000,originword[7:0]};
+            end
             3'b010: extword={24*{1'b0},originword[7:0]};
-            3'b011: extword={16*{originword[15]},originword[15:0]};
+            3'b011: begin
+                if(originword[15]) extword={16'hffff,originword[15:0]};
+                else               extword={16'h0000,originword[15:0]};
+            end 
             3'b100: extword={16*{1'b0},originword[15:0]};
             default: extword=originword;
         endcase
