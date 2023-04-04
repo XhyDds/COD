@@ -40,7 +40,7 @@ module Controller(
     output reg          uors      ,//有无符号数比较
 
     output reg          RegWrite_w  ,
-    // output reg          RegWrite_m  ,
+    output reg          RegWrite_m  ,
 
     output reg [2:0]    extmode1_m  ,
     output reg [2:0]    extmode2  ,
@@ -129,7 +129,7 @@ module Controller(
     // reg [1 :0]      ALUSrc2   ;
     // reg             uors      ;
     // reg             RegWrite  ;
-    reg             RegWrite_m  ;
+    // reg             RegWrite_m  ;
     // reg             RegWrite_w  ;
     // reg [2 :0]      extmode1  ;
     // reg [2 :0]      extmode1_m  ;

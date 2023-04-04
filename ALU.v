@@ -27,6 +27,12 @@ module ALU(
     input   [31:0]      pc      ,
     input               ALUSrc1 ,   //B
     input   [1:0]       ALUSrc2 ,   //A
+
+    input   [1:0]       afwd    ,
+    input   [1:0]       bfwd    ,
+    input   [31:0]      y       ,
+    input   [31:0]      md      ,
+
     input   [2:0]       ALUOP   ,
     input               sp_sign ,
     input               uors    ,
@@ -49,6 +55,9 @@ module ALU(
 
     reg [31:0] b;
     reg [31:0] a;
+
+    reg [31:0] b00;
+    reg [31:0] a00;
 
     wire [31:0] add_s;
     wire [31:0] sub_s;          //a-b
@@ -90,16 +99,30 @@ module ALU(
     assign zero=uors?ur:sr;
 
     always @(*) begin
+        //forward
+        case (afwd)
+            2'b00: a00=a0;
+            2'b01: a00=y;
+            2'b10: a00=md;
+            default: a00=a0;
+        endcase
+        case (bfwd)
+            2'b00: b00=b0;
+            2'b01: b00=y;
+            2'b10: b00=md;
+            default: b00=b0;
+        endcase
+
         //oprand
         case (ALUSrc1)
-            1'b0: b<=b0;
-            1'b1: b<=imm;
+            1'b0: b=b00;
+            1'b1: b=imm;
         endcase
         case (ALUSrc2)
-            2'b0: a<=a0;
-            2'b1: a<=pc;
-            2'b10:a<=32'b0; 
-            default: a<=a0;
+            2'b0: a=a00;
+            2'b1: a=pc;
+            2'b10:a=32'b0; 
+            default: a=a00;
         endcase
 
         //oprate

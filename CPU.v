@@ -75,9 +75,11 @@ module CPU(
     wire [31:0]         imm_0;
     
     reg [31:0]          b_m;
-    reg [31:0]          rd;
-    reg [31:0]          rd_m;
-    reg [31:0]          rd_w;
+    reg [4:0]          rs1;
+    reg [4:0]          rs2;
+    reg [4:0]          rd;
+    reg [4:0]          rd_m;
+    reg [4:0]          rd_w;
     reg [31:0]          pc_d;
     reg [31:0]          pc_e;
 
@@ -96,6 +98,10 @@ module CPU(
     wire [31:0] result;
     wire [31:0] md_read;
 
+    wire  RegWrite_m;
+    wire [1:0] afwd;
+    wire [1:0] bfwd;
+
 
     always @(posedge clk) begin
         ir<=inst;
@@ -107,6 +113,8 @@ module CPU(
         imm<=imm_0;
 
         b_m<=b;
+        rs1<=ir[19:15];
+        rs2<=ir[24:20];
         rd<=ir[11:7];
         rd_m<=rd;
         rd_w<=rd_m;
@@ -133,6 +141,10 @@ ALU alu(
     .pc     (pc_e   ),
     .ALUSrc1(ALUSrc1),
     .ALUSrc2(ALUSrc2),
+    .afwd   (afwd    ), 
+    .bfwd   (bfwd    ), 
+    .y      (y       ), 
+    .md     (md      ), 
     .uors   (uors   ),
     .sp_sign(sp_sign),
     .ALUOP  (ALUOP  ),
@@ -157,6 +169,7 @@ Controller controller(
     .ALUSrc2  (ALUSrc2  ),
     .uors     (uors     ),
     .RegWrite_w (RegWrite ),
+    .RegWrite_m (RegWrite_m),
     .extmode1_m (extmode1 ),
     .extmode2 (extmode2 ),
 
@@ -233,5 +246,16 @@ EXTer exter2(
     .originword (b_m),
     .mode       (extmode2),
     .extword    (md_wd)
+);
+
+ForwardingUnit forwardunit(
+    .rs1         (rs1         ),
+    .rs2         (rs2         ),
+    .rd_m        (rd_m        ),
+    .rd_w        (rd_w        ),
+    .RegWrite_m  (RegWrite_m  ),
+    .RegWrite_w  (RegWrite    ),
+    .afwd        (afwd        ),
+    .bfwd        (bfwd        )
 );
 endmodule
