@@ -25,7 +25,7 @@ module ALU(
     input   [31:0]      b0      ,
     input   [31:0]      imm     ,
     input   [31:0]      pc      ,
-    input   [1:0]       ALUSrc1 ,   //B
+    input               ALUSrc1 ,   //B
     input   [1:0]       ALUSrc2 ,   //A
     input   [2:0]       ALUOP   ,
     input               sp_sign ,
@@ -92,10 +92,8 @@ module ALU(
     always @(*) begin
         //oprand
         case (ALUSrc1)
-            2'b0: b<=b0;
-            2'b1: b<=imm;
-            2'b10:b<=32'b100; 
-            default: b<=b0;
+            1'b0: b<=b0;
+            1'b1: b<=imm;
         endcase
         case (ALUSrc2)
             2'b0: a<=a0;
@@ -111,7 +109,7 @@ module ALU(
                 else result=add_s;
             end
             // SLL :   result=lshift_s;
-            SLL :   result=a<<2;
+            SLL :   result=lshift_s;
             SLT :   result=sr[2];
             SLTU:   result=ur[2];
             XOR :   result=a^b;

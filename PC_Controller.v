@@ -20,14 +20,13 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 //pc同步更新器
+//尚未传出flush信号
 module PC_Controller(
     input [31:0]        imm     ,
+    input [31:0]        pc_e    ,
     input [2:0]         zero    ,
     input [2:0]         branch  ,
     input [31:0]        y       ,
-
-    input               pc_load ,
-    input [1:0]         PCSrc   ,
 
     input               clk     ,
     input               rstn    ,
@@ -46,18 +45,8 @@ module PC_Controller(
     end
 
     always @(*) begin
-        case (PCSrc)
-            2'b0: begin
-                if(zero&branch) npc=npc2;
-                else npc=npc1;
-            end
-            2'b1: npc=y;
-            2'b10: npc={y[31:1],1'b0};
-            default: begin
-                if(zero&branch) npc=npc2;
-                else npc=npc1;
-            end
-        endcase
+        if(zero&branch) npc=npc2;       //额外信号
+        else npc=npc1;
     end
 
     assign tpc=pc;
@@ -71,7 +60,7 @@ module PC_Controller(
     );
 
     Adder32 add2(
-        .a      (tpc),
+        .a      (pc_e),
         .b      (imm[31:0]),
         .ci     (1'b0),
         .s      (npc2_0),
@@ -82,11 +71,14 @@ module PC_Controller(
         if(!rstn) begin
             pc<=0;
         end
-        else if(pc_load) begin
-            pc<=npc;
-        end
+        // else if(pc_load) begin
+        //     pc<=npc;
+        // end
+        // else begin
+        //     pc<=pc;
+        // end
         else begin
-            pc<=pc;
+            pc<=npc;
         end
     end
 endmodule

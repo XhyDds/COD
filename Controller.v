@@ -21,34 +21,33 @@
 
 
 module Controller(
-    // input [6:0]         funct7  ,
+    input               funct7  ,
+    output reg          sp_sign ,
+
     input [2:0]         funct3  ,
     input [6:0]         opcode  ,
 
     input               clk     ,
     input               rstn    ,
 
-    output reg [2:0]    branch  ,
-    output reg          MemRead ,
-    output reg          MemWrite,
-    output reg          MemtoReg,
-    output reg [2:0]    ALUOP   ,
-    output reg [1:0]    ALUSrc1 ,
-    output reg [1:0]    ALUSrc2 ,
-    output reg [1:0]    PCSrc   ,//决定来自原始pc或alu计算结果
-    output reg          uors    ,//有无符号数比较
+    output reg [2:0]    branch_e    ,
+    output reg          MemRead_m   ,
+    output reg          MemWrite_m  ,
+    output reg          MemtoReg_m  ,
+    output reg [2:0]    ALUOP_e     ,
+    output reg          ALUSrc1_e   ,       // ?????
+    output reg [1:0]    ALUSrc2_e   ,       // ?????
+    output reg          uors_e      ,//有无符号数比较
 
-    output reg          RegWrite,
-    output reg          PCLoad  ,
-    output reg          IRLoad  ,
-    output reg          YLoad   ,
-    output reg          MDLoad  ,
+    // output reg          RegWrite_w  ,
+    output reg          RegWrite_m  ,
 
-    output reg [2:0]    mode    ,
-    output reg [2:0]    extmode1,
-    output reg [2:0]    extmode2,
+    output reg [2:0]    extmode1_m  ,
+    output reg [2:0]    extmode2_e  ,
+    
+    output reg [2:0]    mode        ,
 
-    output reg  stop
+    output reg          stop        
 
     );
 
@@ -57,8 +56,8 @@ module Controller(
     parameter ADD_fml  = 7'b0110011;
     parameter LUI      = 7'b0110111;
     parameter AUIPC    = 7'b0010111;
-    parameter JAL      = 7'b1101111;
-    parameter JALR     = 7'b1100111;
+    // parameter JAL      = 7'b1101111;
+    // parameter JALR     = 7'b1100111;
     parameter BEQ_fml  = 7'b1100011;
     parameter LB_fml   = 7'b0000011;
     parameter SB_fml   = 7'b0100011;
@@ -105,350 +104,289 @@ module Controller(
     parameter SW       = 3'b010;
 //
 
-    reg [2:0] state;
-    reg [2:0] nstate;
+    reg [2:0]       branch      ;
+    reg             MemRead     ;
+    reg             MemWrite    ;
+    reg             MemtoReg    ;
+    reg [2:0]       ALUOP       ;
+    reg             ALUSrc1     ;       // ?????
+    reg [1:0]       ALUSrc2     ;       // ?????
+    reg             uors        ;//有无符号数比较
+    reg             RegWrite    ;
+    reg [2:0]       extmode1    ;
+    reg [2:0]       extmode2    ;
 
+
+    // reg [2 :0]      branch_e    ;
+    reg             MemRead_e   ;
+    // reg             MemRead_m   ;
+    reg             MemWrite_e  ;
+    // reg             MemWrite_m  ;
+    reg             MemtoReg_e  ;
+    // reg             MemtoReg_m  ;
+    // reg [2 :0]      ALUOP_e     ;
+    // reg             ALUSrc1_e   ;
+    // reg [1 :0]      ALUSrc2_e   ;
+    // reg             uors_e      ;
+    reg             RegWrite_e  ;
+    // reg             RegWrite_m  ;
+    // reg             RegWrite_w  ;
+    reg [2 :0]      extmode1_e  ;
+    // reg [2 :0]      extmode1_m  ;
+    // reg [2 :0]      extmode2_e  ;
+    reg             sp_sign_e   ; 
+
+    //译码
+    always @(*) begin
+        case (opcode)
+            ADDI_fml:begin
+               case (funct3)
+                   ADDI : mode=3'b1;
+                   SLLI : mode=3'b10;
+                   SLTI : mode=3'b1;
+                   SLTIU: mode=3'b1;
+                   XORI : mode=3'b1;
+                   SRLI : mode=3'b10;
+                   // SRAI : mode=3'b10;
+                   ORI  : mode=3'b1;
+                   ANDI : mode=3'b1;
+                   default: mode=3'b0;
+               endcase
+            end
+            ADD_fml :mode=3'b0;
+            LUI     :mode=3'b11;
+            AUIPC   :mode=3'b11;
+            // JAL     :mode=3'b100;
+            // JALR    :mode=3'b1;
+            BEQ_fml :mode=3'b101;
+            LB_fml  :mode=3'b1;
+            SB_fml  :mode=3'b110;
+            default :mode=3'b0;
+        endcase
+    end
 
     always @(posedge clk) begin
         if(!rstn) begin
-            state   <=0;
-
             branch  <=0;
             MemRead <=0;
             MemWrite<=0;
             MemtoReg<=0;
             ALUOP   <=0;
-            ALUSrc1 <=2'b0;
-            ALUSrc2 <=2'b0;
-            
-            stop<=0;
+            ALUSrc1 <=0;
+            ALUSrc2 <=0;
+            uors    <=0;
+            RegWrite<=0;
+            extmode1<=0;
+            extmode2<=0;
+
+            stop    <=0;
         end
         else begin
-            state<=nstate;
-            case (nstate)
-                3'b0:   begin   //取指令
+            //译码
+            case (opcode)
+                ADDI_fml: begin
                     branch  <=0;
                     MemRead <=0;
                     MemWrite<=0;
                     MemtoReg<=0;
-                    ALUOP   <=0;
-                    ALUSrc1 <=2'b0;
+                    ALUOP   <=funct3;
+                    ALUSrc1 <=1'b1;
                     ALUSrc2 <=2'b0;
-
-                    stop<=0;
-                end
-                3'b1:   begin   //译码与取操作数
+                    uors    <=0;
+                    RegWrite<=1;
+                    extmode1<=0;
+                    extmode2<=0;
+            
+                    stop    <=0;
+                end 
+                ADD_fml: begin
                     branch  <=0;
                     MemRead <=0;
                     MemWrite<=0;
                     MemtoReg<=0;
-                    ALUOP   <=0;
-                    ALUSrc1 <=2'b0;
+                    ALUOP   <=funct3;
+                    ALUSrc1 <=1'b0;
                     ALUSrc2 <=2'b0;
-
-                    if(opcode==ECALL) begin
-                        stop<=1;
-                    end
+                    uors    <=0;
+                    RegWrite<=1;
+                    extmode1<=0;
+                    extmode2<=0;
+            
+                    stop    <=0;
                 end
-                3'b10:  begin   //计算
+                LUI: begin
                     branch  <=0;
                     MemRead <=0;
                     MemWrite<=0;
                     MemtoReg<=0;
-                    
-
-                    case (opcode)
-                        ADDI_fml:begin
-                            ALUOP<=funct3;
-                            ALUSrc1<=2'b1;
-                            ALUSrc2<=2'b0;
-                        end
-                        ADD_fml :begin
-                            ALUOP<=funct3;
-                            ALUSrc1<=2'b0;
-                            ALUSrc2<=2'b0;
-                        end
-                        LUI:begin
-                            ALUOP<=3'b000;
-                            ALUSrc1<=2'b1;
-                            ALUSrc2<=2'b10;
-                        end
-                        AUIPC:begin
-                            ALUOP<=3'b000;
-                            ALUSrc1<=2'b1;
-                            ALUSrc2<=2'b1;
-                        end
-                        JAL     :begin
-                            ALUOP<=3'b000;
-                            ALUSrc1<=2'b1;
-                            ALUSrc2<=2'b1;
-                        end
-                        JALR    :begin
-                            ALUOP<=3'b000;
-                            ALUSrc1<=2'b1;
-                            ALUSrc2<=2'b0;
-                        end
-                        BEQ_fml :begin
-                            case (funct3)
-                                BEQ :    ALUOP<=3'b010;
-                                BNE :    ALUOP<=3'b010;
-                                BLT :    ALUOP<=3'b010;
-                                BGE :    ALUOP<=3'b010;
-                                BLTU:    ALUOP<=3'b011;
-                                BGEU:    ALUOP<=3'b011;
-                                default: ALUOP<=3'b000;
-                            endcase
-                            ALUSrc1<=2'b0;
-                            ALUSrc2<=2'b0;
-                        end
-                        LB_fml  :begin
-                            ALUOP<=3'b000;
-                            ALUSrc1<=2'b1;
-                            ALUSrc2<=2'b0;
-                        end
-                        SB_fml  :begin
-                            ALUOP<=3'b000;
-                            ALUSrc1<=2'b1;
-                            ALUSrc2<=2'b0;
-                        end
-                        default :begin
-                            ALUOP<=3'b000;
-                            ALUSrc1<=2'b0;
-                            ALUSrc2<=2'b0;
-                        end
-                    endcase
-
-                    case (opcode)
-                        SB_fml  :begin
-                            case (funct3)
-                                SB: extmode2<=3'b010;
-                                SH: extmode2<=3'b100;
-                                default: extmode2<=3'b000;
-                            endcase
-                        end
-                        default: extmode2<=3'b0;
-                    endcase
+                    ALUOP   <=3'b0;
+                    ALUSrc1 <=1'b1;
+                    ALUSrc2 <=2'b10;
+                    uors    <=0;
+                    RegWrite<=1;
+                    extmode1<=0;
+                    extmode2<=0;
+            
+                    stop    <=0;
                 end
-                3'b11:  begin   //访存
-                    ALUOP   <=0;
-                    ALUSrc1 <=2'b0;
-                    ALUSrc2 <=2'b0;
-                    
-
-                    case (opcode)
-                        //LUI     
-                        //AUIPC   
-                        JAL     :begin
-                            branch<=3'b000;
-                            PCSrc<=2'b1;
+                AUIPC: begin
+                    branch  <=0;
+                    MemRead <=0;
+                    MemWrite<=0;
+                    MemtoReg<=0;
+                    ALUOP   <=3'b0;
+                    ALUSrc1 <=1'b1;
+                    ALUSrc2 <=2'b1;
+                    uors    <=0;
+                    RegWrite<=1;
+                    extmode1<=0;
+                    extmode2<=0;
+            
+                    stop    <=0;
+                end
+                BEQ_fml: begin
+                    MemRead <=0;
+                    MemWrite<=0;
+                    MemtoReg<=0;
+                    case (funct3)
+                        BEQ :    begin
+                            ALUOP<=3'b010;
+                            branch<=3'b010;
                             uors<=0;
-                        end
-                        JALR    :begin
-                            branch<=3'b000;
-                            PCSrc<=2'b10;
+                        end 
+                        BNE :    begin
+                            ALUOP<=3'b010;
+                            branch<=3'b101;
                             uors<=0;
-                        end
-                        BEQ_fml :begin
-                            case (funct3)
-                                BEQ :    begin
-                                    branch<=3'b010;
-                                    uors<=0;
-                                end 
-                                BNE :    begin
-                                    branch<=3'b101;
-                                    uors<=0;
-                                end 
-                                BLT :    begin
-                                    branch<=3'b100;
-                                    uors<=0;
-                                end 
-                                BGE :    begin
-                                    branch<=3'b011;
-                                    uors<=0;
-                                end 
-                                BLTU:    begin
-                                    branch<=3'b100;
-                                    uors<=1;
-                                end 
-                                BGEU:    begin
-                                    branch<=3'b011;
-                                    uors<=1;
-                                end 
-                                default: begin
-                                    branch<=3'b000;
-                                    uors<=0;
-                                end 
-                            endcase
-                            PCSrc<=2'b0;
-                        end
+                        end 
+                        BLT :    begin
+                            ALUOP<=3'b010;
+                            branch<=3'b100;
+                            uors<=0;
+                        end 
+                        BGE :    begin
+                            ALUOP<=3'b010;
+                            branch<=3'b011;
+                            uors<=0;
+                        end 
+                        BLTU:    begin
+                            ALUOP<=3'b011;
+                            branch<=3'b100;
+                            uors<=1;
+                        end 
+                        BGEU:    begin
+                            ALUOP<=3'b011;
+                            branch<=3'b011;
+                            uors<=1;
+                        end 
                         default: begin
+                            ALUOP<=3'b000;
                             branch<=3'b000;
-                            PCSrc<=2'b0;
                             uors<=0;
                         end 
                     endcase
-
-                    case (opcode)
-                        //ADDI_fml
-                        //ADD_fml 
-                        //LUI     
-                        //AUIPC   
-                        //JAL  
-                        //JALR 
-                        //BEQ_fml
-                        LB_fml  :begin
-                            MemRead <=1;
-                            MemWrite<=0;
-                            MemtoReg<=1;
-                        end
-                        SB_fml  :begin
-                            MemRead <=0;
-                            MemWrite<=1;
-                            MemtoReg<=0;
-                        end
-                        default :begin
-                            MemRead <=0;
-                            MemWrite<=0;
-                            MemtoReg<=0;
-                        end
-                    endcase 
-
-                    case (opcode)
-                        LB_fml  :begin
-                            case (funct3)
-                                LB :        extmode1<=3'b001;
-                                LH :        extmode1<=3'b011;
-                                LW :        extmode1<=3'b0;
-                                LBU:        extmode1<=3'b010;
-                                LHU:        extmode1<=3'b100;
-                                default:    extmode1<=3'b0;
-                            endcase
-                        end
-                        default: extmode1<=3'b0;
+                    ALUSrc1 <=1'b0;
+                    ALUSrc2 <=2'b0;
+                    RegWrite<=0;
+                    extmode1<=0;
+                    extmode2<=0;
+            
+                    stop    <=0;
+                end
+                LB_fml: begin
+                    branch  <=0;
+                    MemRead <=1;
+                    MemWrite<=0;
+                    MemtoReg<=1;
+                    ALUOP   <=3'b000;
+                    ALUSrc1 <=1'b1;
+                    ALUSrc2 <=2'b0;
+                    uors    <=0;
+                    RegWrite<=1;
+                    extmode2<=0;
+                    case (funct3)
+                        LB :        extmode1<=3'b001;
+                        LH :        extmode1<=3'b011;
+                        LW :        extmode1<=3'b0;
+                        LBU:        extmode1<=3'b010;
+                        LHU:        extmode1<=3'b100;
+                        default:    extmode1<=3'b0;
                     endcase
+            
+                    stop    <=0;
                 end
-                3'b100:  begin  //写回
+                SB_fml: begin
+                    branch  <=0;
+                    MemRead <=0;
+                    MemWrite<=1;
+                    MemtoReg<=0;
+                    ALUOP   <=3'b000;
+                    ALUSrc1 <=1'b1;
+                    ALUSrc2 <=2'b0;
+                    uors    <=0;
+                    RegWrite<=0;
+                    extmode1<=0;
+                    case (funct3)
+                        SB: extmode2<=3'b010;
+                        SH: extmode2<=3'b100;
+                        default: extmode2<=3'b000;
+                    endcase
+            
+                    stop    <=0;
+                end
+                ECALL: begin
                     branch  <=0;
                     MemRead <=0;
                     MemWrite<=0;
                     MemtoReg<=0;
                     ALUOP   <=0;
-                    ALUSrc1 <=2'b0;
-                    ALUSrc2 <=2'b0;
-                    
+                    ALUSrc1 <=0;
+                    ALUSrc2 <=0;
+                    uors    <=0;
+                    RegWrite<=0;
+                    extmode1<=0;
+                    extmode2<=0;
 
+                    stop    <=1;
                 end
-                default: begin
+                default: begin          //包含空指令
                     branch  <=0;
                     MemRead <=0;
                     MemWrite<=0;
                     MemtoReg<=0;
                     ALUOP   <=0;
-                    ALUSrc1 <=2'b0;
-                    ALUSrc2 <=2'b0;
-                    
+                    ALUSrc1 <=0;
+                    ALUSrc2 <=0;
+                    uors    <=0;
+                    RegWrite<=0;
+                    extmode1<=0;
+                    extmode2<=0;
 
+                    stop    <=0;
                 end
             endcase
         end
     end
 
-    always @(*) begin
-        if(!stop) begin  
-        case (state)
-            3'b0:   begin   //取指令
-                nstate=3'b1;
-                RegWrite =0;
-                PCLoad   =0;
-                IRLoad   =1;
-                YLoad    =0;
-                MDLoad   =0;
-
-                mode=3'b0;
-            end
-            3'b1:   begin   //译码与取操作数
-                nstate=3'b10;
-                RegWrite =0;
-                PCLoad   =0;
-                IRLoad   =0;
-                YLoad    =0;
-                MDLoad   =0;
-
-                case (opcode)
-                    ADDI_fml:begin
-                            case (funct3)
-                                ADDI : mode=3'b1;
-                                SLLI : mode=3'b10;
-                                SLTI : mode=3'b1;
-                                SLTIU: mode=3'b1;
-                                XORI : mode=3'b1;
-                                SRLI : mode=3'b10;
-                                // SRAI : mode=3'b10;
-                                ORI  : mode=3'b1;
-                                ANDI : mode=3'b1;
-                                default: mode=3'b0;
-                            endcase
-                    end
-                    ADD_fml :mode=3'b0;
-                    LUI     :mode=3'b11;
-                    AUIPC   :mode=3'b11;
-                    JAL     :mode=3'b100;
-                    JALR    :mode=3'b1;
-                    BEQ_fml :mode=3'b101;
-                    LB_fml  :mode=3'b1;
-                    SB_fml  :mode=3'b110;
-                    default :mode=3'b0;
-                endcase
-            end
-            3'b10:  begin   //计算
-                nstate=3'b11;
-                RegWrite =0;
-                PCLoad   =0;
-                IRLoad   =0;
-                YLoad    =1;
-                MDLoad   =0;
-
-                mode=3'b0;
-            end
-            3'b11:  begin   //访存
-                nstate=3'b100;
-                RegWrite =0;
-                PCLoad   =1;
-                IRLoad   =0;
-                YLoad    =0;
-                MDLoad   =1;
-
-                mode=3'b0;
-            end
-            3'b100:  begin  //写回
-                nstate=3'b0;
-                PCLoad   =0;
-                IRLoad   =0;
-                YLoad    =0;
-                MDLoad   =0;
-
-                mode=3'b0;
-
-                case (opcode)
-                    BEQ_fml:RegWrite=1'b0;
-                    SB_fml: RegWrite=1'b0;
-                    default: RegWrite=1'b1;
-                endcase
-            end
-            default: begin
-                nstate=3'b0;
-                RegWrite =0;
-                PCLoad   =0;
-                IRLoad   =0;
-                YLoad    =0;
-                MDLoad   =0;
-
-                mode=3'b0;
-            end
-        endcase
-        end
-        else begin
-            nstate=3'b1;
-        end
+    //ctl数据流水
+    always @(posedge clk) begin
+        branch_e    <= branch       ;
+        MemRead_e   <= MemRead      ;
+        MemRead_m   <= MemRead_e    ;
+        MemWrite_e  <= MemWrite     ;
+        MemWrite_m  <= MemWrite_e   ;
+        MemtoReg_e  <= MemtoReg     ;
+        MemtoReg_m  <= MemtoReg_e   ;
+        ALUOP_e     <= ALUOP        ;
+        ALUSrc1_e   <= ALUSrc1      ;
+        ALUSrc2_e   <= ALUSrc2      ;
+        uors_e      <= uors         ;
+        RegWrite_e  <= RegWrite     ;
+        RegWrite_m  <= RegWrite_e   ;
+        // RegWrite_w  <= RegWrite_m   ;
+        extmode1_e  <= extmode1     ;
+        extmode1_m  <= extmode1_e   ;
+        extmode2_e  <= extmode2     ;
+        sp_sign     <= funct7       ;
     end
 endmodule

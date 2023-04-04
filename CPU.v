@@ -53,37 +53,33 @@ module CPU(
     output              MemWrite    ,
     output              MemtoReg    ,
     output [2:0]        ALUOP       ,
-    output [1:0]        ALUSrc1     ,
+    output              ALUSrc1     ,
     output [1:0]        ALUSrc2     ,
     output              RegWrite    
 
-    ,output reg [2:0]   zero        ,
-    output              pc_load     ,
-    output              ir_load     ,
-    output              y_load      ,
-    output              md_load     ,
+    ,output     [2:0]   zero        ,
     output [2:0]        mode        ,
-    output [1:0]        PCSrc       ,
     output              uors        ,
 
-    output              stop        
+    output              stop        ,
+    output [2:0]        extmode1    ,
+    output [2:0]        extmode2    ,
+    output              sp_sign     
     );
+    // wire [2:0]  extmode1;
+    // wire [2:0]  extmode2;
+    // wire        sp_sign;
 
-    //自加数据通路
-    // wire [2:0]  zero    ;
-    // wire        pc_load ;
-    // wire        ir_load ;
-    // wire        y_load  ;
-    // wire        md_load ;
-    // wire [2:0]  mode    ;
-    // wire [1:0]  PCSrc   ;
-    // wire        uors    ;
-    wire [2:0]  zero0   ;
-    wire [2:0]  extmode1;
-    wire [2:0]  extmode2;
-
-    wire [31:0]       a0;
-    wire [31:0]       b0;
+    wire [31:0]         a0;
+    wire [31:0]         b0;
+    wire [31:0]         imm_0;
+    
+    reg [31:0]          b_m;
+    reg [31:0]          rd;
+    reg [31:0]          rd_m;
+    reg [31:0]          rd_w;
+    reg [31:0]          pc_d;
+    reg [31:0]          pc_e;
 
     wire [4:0]  ra      ;
     wire [4:0]  wa      ;
@@ -100,34 +96,30 @@ module CPU(
     wire [31:0] result;
     wire [31:0] md_read;
 
-    reg[31:0] imm_m;
-    wire [31:0] imm_0;
-
 
     always @(posedge clk) begin
-        if(ir_load) begin
-            ir<=inst;
-        end
-        if(y_load) begin
-            y<=result;
-        end
-        if(md_load) begin
-            //md<=(MemtoReg?md_read:y);只能在assign中使用
-            if(MemtoReg) md<=md_read;
-            else md<=y;
-        end
-        zero<=zero0;
-        imm_m<=imm;
+        ir<=inst;
+        y<=result;
+
+        if(MemtoReg) md<=md_read;
+        else md<=y;
+
         imm<=imm_0;
+
+        b_m<=b;
+        rd<=ir[11:7];
+        rd_m<=rd;
+        rd_w<=rd_m;
+        pc_d<=pc;
+        pc_e<=pc_d;
     end
 
 PC_Controller pc_controller(
     .imm     (imm    ),
+    .pc_e    (pc_e   ),
     .y       (y      ),
     .zero    (zero   ),
     .branch  (branch ),
-    .PCSrc   (PCSrc  ),
-    .pc_load (pc_load),
     .clk     (clk    ),
     .rstn    (rstn   ),
     .pc      (pc     ),
@@ -138,40 +130,37 @@ ALU alu(
     .a0     (a      ),
     .b0     (b      ),
     .imm    (imm    ),
-    .pc     (pc     ),
+    .pc     (pc_e   ),
     .ALUSrc1(ALUSrc1),
     .ALUSrc2(ALUSrc2),
     .uors   (uors   ),
-    .sp_sign(ir[30] ),
+    .sp_sign(sp_sign),
     .ALUOP  (ALUOP  ),
     .result (result ),
-    .zero   (zero0   )
+    .zero   (zero   )
 );
 
 Controller controller(
-    // .funct7     (ir[31:25]),
+    .funct7     (ir[30]   ),
+    .sp_sign    (sp_sign  ),
+
     .funct3     (ir[14:12]),
     .opcode     (ir[6:0]  ),
     .clk        (clk      ),
     .rstn       (rstn     ),
-    .branch     (branch   ),
-    .MemRead    (MemRead  ),
-    .MemWrite   (MemWrite ),
-    .MemtoReg   (MemtoReg ),
-    .ALUOP      (ALUOP    ),
-    .ALUSrc1    (ALUSrc1  ),
-    .ALUSrc2    (ALUSrc2  ),
-    .PCSrc      (PCSrc    ),
-    .uors       (uors     ),
-    .extmode1   (extmode1 ),
-    .extmode2   (extmode2 ),
-    .mode       (mode     ),
+    .branch_e   (branch   ),
+    .MemRead_m  (MemRead  ),
+    .MemWrite_m (MemWrite ),
+    .MemtoReg_m (MemtoReg ),
+    .ALUOP_e    (ALUOP    ),
+    .ALUSrc1_e  (ALUSrc1  ),
+    .ALUSrc2_e  (ALUSrc2  ),
+    .uors_e     (uors     ),
+    .RegWrite_m (RegWrite ),
+    .extmode1_m (extmode1 ),
+    .extmode2_e (extmode2 ),
 
-    .RegWrite   (RegWrite ),
-    .PCLoad     (pc_load  ),
-    .IRLoad     (ir_load  ),
-    .YLoad      (y_load   ),
-    .MDLoad     (md_load  ),
+    .mode       (mode     ),
 
     .stop       (stop)
 );
@@ -241,7 +230,7 @@ EXTer exter1(
 );
 
 EXTer exter2(
-    .originword (b),
+    .originword (b_m),
     .mode       (extmode2),
     .extword    (md_wd)
 );

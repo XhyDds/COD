@@ -56,17 +56,12 @@ module TOP(
     wire              MemWrite    ;
     wire              MemtoReg    ;
     wire [2:0]        ALUOP       ;
-    wire [1:0]        ALUSrc1     ;
+    wire              ALUSrc1     ;
     wire [1:0]        ALUSrc2     ;
     wire              RegWrite    ;
 
     wire [2:0]  zero    ;
-    wire        pc_load ;
-    wire        ir_load ;
-    wire        y_load  ;
-    wire        md_load ;
     wire [2:0]  mode    ;
-    wire [1:0]  PCSrc   ;
     wire        uors    ;
 
     wire rf_dcp_rd;
@@ -75,7 +70,7 @@ module TOP(
 
     assign CTL={2'b0,branch  ,MemRead ,MemWrite,MemtoReg,ALUOP   ,ALUSrc1 ,ALUSrc2 ,RegWrite};
     
-    assign DebugData={ir_load,y_load ,md_load,mode,zero,branch,ALUOP,ALUSrc1[0]};
+    assign DebugData={mode,zero,branch,extmode1,extmode2,sp_sign};  //?位
 
     SDU SDU(
         .clk     (clk     ),
@@ -145,15 +140,12 @@ module TOP(
         .ALUSrc2     (ALUSrc2     ),//
         .RegWrite    (RegWrite    ),//
 
-
-        .pc_load     (pc_load     ),
-        .ir_load     (ir_load     ),
-        .y_load      (y_load      ),
-        .md_load     (md_load     ),
         .mode        (mode        ),
         .zero        (zero        ),
-        .PCSrc       (PCSrc       ),
         .uors        (uors        ),
+        .extmode1    (extmode1    ),
+        .extmode2    (extmode2    ),
+        .sp_sign     (sp_sign     ),
 
         .stop       (stop)
     );
