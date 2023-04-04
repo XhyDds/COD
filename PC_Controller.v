@@ -32,7 +32,10 @@ module PC_Controller(
     input               rstn    ,
 
     output reg [31:0]   pc      ,
-    output reg [31:0]   npc     
+    output reg [31:0]   npc     ,
+
+    output reg          flush   ,
+    input               fstall  
     );
 
     wire [31:0] tpc;
@@ -45,8 +48,19 @@ module PC_Controller(
     end
 
     always @(*) begin
-        if(zero&branch) npc=npc2;       //额外信号
-        else npc=npc1;
+        if(zero&branch) begin
+            npc=npc2;    
+            flush=1;        //  不会死循环，因为flush后必然无法进入该分支（且保证了pc更新）
+        end    
+        else begin
+            if(fstall) begin
+                npc=tpc;
+            end
+            else begin
+                npc=npc1;
+            end
+            flush=0;
+        end 
     end
 
     assign tpc=pc;

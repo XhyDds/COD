@@ -69,6 +69,10 @@ module CPU(
     // wire [2:0]  extmode1;
     // wire [2:0]  extmode2;
     // wire        sp_sign;
+    wire  eflush;
+    wire  dstall;
+    wire  fstall;
+    wire  flush;
 
     wire [31:0]         a0;
     wire [31:0]         b0;
@@ -104,22 +108,70 @@ module CPU(
 
 
     always @(posedge clk) begin
-        ir<=inst;
-        y<=result;
+        if(!rstn) begin
+            ir<=0;
+            y<=0;
+            md<=0;
+            imm<=0;
+            b_m<=0;
+            rs1<=0;
+            rs2<=0;
+            rd <=0;
+            rd_m<=0;
+            rd_w<=0;
+            pc_d<=0;
+            pc_e<=0;
+        end
+        else if(eflush||flush) begin
+            // ir<=0;
+            y<=0;
+            // md<=0;
+            imm<=0;
+            // b_m<=0;
+            rs1<=0;
+            rs2<=0;
+            rd <=0;
+            
+            pc_d<=0;
+            if(flush) begin //flush优先
+                ir<=0;
+                md<=0;
+                b_m<=0;
+                rd_m<=0;
+                rd_w<=0;
+                pc_e<=0;
+            end
+            else begin
+                ir<=ir; //dstall
 
-        if(MemtoReg) md<=md_read;
-        else md<=y;
+                if(MemtoReg) md<=md_read;
+                else md<=y;
 
-        imm<=imm_0;
+                b_m<=b;
+                rd_m<=rd;
+                rd_w<=rd_m;
+                pc_e<=pc_d;  
+            end
+        end
+        else begin
+            ir<=inst;
+            y<=result;
 
-        b_m<=b;
-        rs1<=ir[19:15];
-        rs2<=ir[24:20];
-        rd<=ir[11:7];
-        rd_m<=rd;
-        rd_w<=rd_m;
-        pc_d<=pc;
-        pc_e<=pc_d;
+            if(MemtoReg) md<=md_read;
+            else md<=y;
+
+            imm<=imm_0;
+
+            rs1<=ir[19:15];
+            rs2<=ir[24:20];
+            rd<=ir[11:7];
+
+            b_m<=b;
+            rd_m<=rd;
+            rd_w<=rd_m;
+            pc_d<=pc;
+            pc_e<=pc_d;            
+        end
     end
 
 PC_Controller pc_controller(
@@ -131,7 +183,10 @@ PC_Controller pc_controller(
     .clk     (clk    ),
     .rstn    (rstn   ),
     .pc      (pc     ),
-    .npc     (npc    )
+    .npc     (npc    ),
+
+    .fstall  (fstall ),
+    .flush   (flush  )
 );
 
 ALU alu(
@@ -153,6 +208,9 @@ ALU alu(
 );
 
 Controller controller(
+    .eflush     (eflush   ),
+    .flush      (flush    ),
+
     .funct7     (ir[30]   ),
     .sp_sign    (sp_sign  ),
 
@@ -161,7 +219,7 @@ Controller controller(
     .clk        (clk      ),
     .rstn       (rstn     ),
     .branch   (branch   ),
-    .MemRead_m  (MemRead  ),
+    .MemRead    (MemRead  ),
     .MemWrite_m (MemWrite ),
     .MemtoReg_m (MemtoReg ),
     .ALUOP    (ALUOP    ),
@@ -221,8 +279,18 @@ RegisterFile rf(
 );
 
     always @(posedge clk) begin
-        a<=a0;
-        b<=b0;
+        if(!rstn) begin
+            a<=0;
+            b<=0;
+        end
+        else if(eflush || flush) begin
+            a<=0;
+            b<=0;
+        end
+        else begin
+            a<=a0;
+            b<=b0;
+        end
     end
     // assign ra=rf_dcp_rd?rf_addr:ir[19:15];
     // assign rf_out=a;
@@ -257,5 +325,15 @@ ForwardingUnit forwardunit(
     .RegWrite_w  (RegWrite    ),
     .afwd        (afwd        ),
     .bfwd        (bfwd        )
+);
+
+HarzardUnit harzardunit(
+    .rs1     (ir[19:15]),
+    .rs2     (ir[24:20]),
+    .rd      (rd      ),
+    .MemRead (MemRead ),
+    .eflush  (eflush  ),
+    .dstall  (dstall  ),
+    .fstall  (fstall  )
 );
 endmodule

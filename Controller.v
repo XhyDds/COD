@@ -21,6 +21,9 @@
 
 
 module Controller(
+    input               eflush  ,
+    input               flush   ,
+
     input               funct7  ,
     output reg          sp_sign ,
 
@@ -31,7 +34,7 @@ module Controller(
     input               rstn    ,
 
     output reg [2:0]    branch    ,
-    output reg          MemRead_m   ,
+    output reg          MemRead   ,
     output reg          MemWrite_m  ,
     output reg          MemtoReg_m  ,
     output reg [2:0]    ALUOP     ,
@@ -105,7 +108,7 @@ module Controller(
 //
 
     // reg [2:0]       branch      ;
-    reg             MemRead     ;
+    // reg             MemRead     ;
     reg             MemWrite    ;
     reg             MemtoReg    ;
     // reg [2:0]       ALUOP       ;
@@ -167,6 +170,21 @@ module Controller(
 
     always @(posedge clk) begin
         if(!rstn) begin
+            branch  <=0;
+            MemRead <=0;
+            MemWrite<=0;
+            MemtoReg<=0;
+            ALUOP   <=0;
+            ALUSrc1 <=0;
+            ALUSrc2 <=0;
+            uors    <=0;
+            RegWrite<=0;
+            extmode1<=0;
+            extmode2<=0;
+
+            stop    <=0;
+        end
+        else if(eflush||flush) begin
             branch  <=0;
             MemRead <=0;
             MemWrite<=0;
@@ -370,12 +388,30 @@ module Controller(
 
     //ctl数据流水
     always @(posedge clk) begin
-        MemRead_m   <= MemRead    ;
-        MemWrite_m  <= MemWrite   ;
-        MemtoReg_m  <= MemtoReg   ;
-        RegWrite_m  <= RegWrite   ;
-        RegWrite_w  <= RegWrite_m   ;
-        extmode1_m  <= extmode1   ;
-        sp_sign     <= funct7       ;
+        if(!rstn) begin
+            MemWrite_m  <= 0   ;
+            MemtoReg_m  <= 0   ;
+            RegWrite_m  <= 0   ;
+            RegWrite_w  <= 0   ;
+            extmode1_m  <= 0   ;
+            sp_sign     <= 0   ;    
+        end
+        else if(flush) begin
+            MemWrite_m  <= 0   ;
+            MemtoReg_m  <= 0   ;
+            RegWrite_m  <= 0   ;
+            RegWrite_w  <= 0   ;
+            extmode1_m  <= 0   ;
+            sp_sign     <= 0   ;    
+        end
+        else begin
+            // MemRead_m   <= MemRead    ;
+            MemWrite_m  <= MemWrite   ;
+            MemtoReg_m  <= MemtoReg   ;
+            RegWrite_m  <= RegWrite   ;
+            RegWrite_w  <= RegWrite_m   ;
+            extmode1_m  <= extmode1   ;
+            sp_sign     <= funct7       ;            
+        end
     end
 endmodule

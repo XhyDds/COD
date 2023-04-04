@@ -34,22 +34,22 @@ module ForwardingUnit(
     );
 
     always @(*) begin
-        if(rs1==rd_m & RegWrite_m) begin
+        if(rs1==rd_m && RegWrite_m) begin
             afwd=2'b1;
         end
         else begin
-            if(rs1==rd_w & RegWrite_w ) begin
+            if(rs1==rd_w && RegWrite_w ) begin
                 afwd=2'b10;
             end
             else begin
                 afwd=2'b0;
             end
         end
-        if(rs2==rd_m & RegWrite_m) begin
+        if(rs2==rd_m && RegWrite_m) begin
             bfwd=2'b1;
         end
         else begin
-            if(rs2==rd_w & RegWrite_w ) begin
+            if(rs2==rd_w && RegWrite_w ) begin
                 bfwd=2'b10;
             end
             else begin
