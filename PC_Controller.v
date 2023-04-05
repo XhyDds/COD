@@ -23,7 +23,7 @@
 //尚未传出flush信号
 module PC_Controller(
     input [31:0]        imm     ,
-    input [31:0]        pc_d    ,
+    input [31:0]        pc_e    ,
     input [2:0]         zero    ,
     input [2:0]         branch  ,
     input [31:0]        y       ,
@@ -49,9 +49,6 @@ module PC_Controller(
     // end
 
     always @(*) begin
-        if(stop) begin
-            npc=tpc;
-        end
         if(zero&branch) begin
             npc=npc2;    
             flush=1;        //  不会死循环，因为flush后必然无法进入该分支（且保证了pc更新）
@@ -78,7 +75,7 @@ module PC_Controller(
     );
 
     Adder32 add2(
-        .a      (pc_d),
+        .a      (pc_e),
         .b      (imm[31:0]),
         .ci     (1'b0),
         .s      (npc2),
@@ -88,6 +85,9 @@ module PC_Controller(
     always @(posedge clk) begin
         if(!rstn) begin
             pc<=0;
+        end
+        else if(stop) begin
+            pc<=pc;
         end
         // else if(pc_load) begin
         //     pc<=npc;

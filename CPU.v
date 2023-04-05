@@ -79,8 +79,8 @@ module CPU(
     wire [31:0]         imm_0;
     
     reg [31:0]          b_m;
-    // reg [4:0]           b_m_0;
-    reg [4:0] md_n;
+    reg [31:0]           b_m_0;
+    reg [31:0] md_n;
 
     reg [4:0]          rs1;
     reg [4:0]          rs2;
@@ -116,7 +116,7 @@ module CPU(
             y<=0;
             md<=0;
             imm<=0;
-            // b_m_0<=0;
+            b_m<=0;
             rs1<=0;
             rs2<=0;
             rd <=0;
@@ -133,7 +133,7 @@ module CPU(
             else md<=y;
             md_n<=md;
             imm<=0;
-            // b_m_0<=0; //e段结果
+            b_m<=0; //e段结果
             rs1<=0;
             rs2<=0;
             rd <=0;
@@ -149,7 +149,7 @@ module CPU(
             else md<=y;
             md_n<=md;
             imm<=0;
-            // b_m_0<=b;
+            b_m<=b_m_0;
             rs1<=0;
             rs2<=0;
             rd <=0;
@@ -172,7 +172,7 @@ module CPU(
             rs2<=ir[24:20];
             rd<=ir[11:7];
 
-            // b_m_0<=b;
+            b_m<=b_m_0;
             rd_m<=rd;
             rd_w<=rd_m;
             pc_d<=pc;
@@ -182,17 +182,17 @@ module CPU(
 
     always @(*) begin
         case (bfwd)
-            2'b00: b_m=b;
+            2'b00: b_m_0=b;
             // 2'b00: b_m=b_m_0;
-            2'b01: b_m=y;
-            2'b10: b_m=md;
-            2'b11: b_m=md_n;
+            2'b01: b_m_0=y;
+            2'b10: b_m_0=md;
+            2'b11: b_m_0=md_n;
         endcase        
     end
 
 PC_Controller pc_controller(
     .imm     (imm    ),
-    .pc_d    (pc_e   ),
+    .pc_e    (pc_e   ),
     .y       (y      ),
     .zero    (zero   ),
     .branch  (branch ),

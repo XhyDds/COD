@@ -105,7 +105,7 @@ module Controller(
     parameter SB       = 3'b000;
     parameter SH       = 3'b001;
     parameter SW       = 3'b010;
-//
+//   
 
     // reg [2:0]       branch      ;
     // reg             MemRead     ;
@@ -138,6 +138,33 @@ module Controller(
     // reg [2 :0]      extmode1_m  ;
     // reg [2 :0]      extmode2  ;
     // reg             sp_sign   ; 
+
+    //stop
+    reg             stop_n;    
+    reg stop_state;
+    reg nstop_state; 
+
+    always @(posedge clk) begin
+        if(!rstn) begin
+            stop_state<=0;
+        end
+        else begin
+            stop_state<=nstop_state;
+        end
+        case (stop_state)
+            1'b0: stop<=0;
+            1'b1: stop<=1;
+        endcase
+    end
+    always @(*) begin
+        case (stop_state)
+            1'b0: begin
+                if(stop_n) nstop_state=1;
+                else nstop_state=0;
+            end
+            1'b1: nstop_state=1;
+        endcase
+    end
 
     //译码
     always @(*) begin
@@ -182,7 +209,7 @@ module Controller(
             extmode1<=0;
             extmode2<=0;
 
-            stop    <=0;
+            stop_n    <=0;
         end
         else if(eflush||flush) begin
             branch  <=0;
@@ -197,7 +224,7 @@ module Controller(
             extmode1<=0;
             extmode2<=0;
 
-            stop    <=0;
+            stop_n    <=0;
         end
         else begin
             //译码
@@ -215,7 +242,7 @@ module Controller(
                     extmode1<=0;
                     extmode2<=0;
             
-                    stop    <=0;
+                    stop_n    <=0;
                 end 
                 ADD_fml: begin
                     branch  <=0;
@@ -230,7 +257,7 @@ module Controller(
                     extmode1<=0;
                     extmode2<=0;
             
-                    stop    <=0;
+                    stop_n    <=0;
                 end
                 LUI: begin
                     branch  <=0;
@@ -245,7 +272,7 @@ module Controller(
                     extmode1<=0;
                     extmode2<=0;
             
-                    stop    <=0;
+                    stop_n    <=0;
                 end
                 AUIPC: begin
                     branch  <=0;
@@ -260,7 +287,7 @@ module Controller(
                     extmode1<=0;
                     extmode2<=0;
             
-                    stop    <=0;
+                    stop_n    <=0;
                 end
                 BEQ_fml: begin
                     MemRead <=0;
@@ -309,7 +336,7 @@ module Controller(
                     extmode1<=0;
                     extmode2<=0;
             
-                    stop    <=0;
+                    stop_n    <=0;
                 end
                 LB_fml: begin
                     branch  <=0;
@@ -331,7 +358,7 @@ module Controller(
                         default:    extmode1<=3'b0;
                     endcase
             
-                    stop    <=0;
+                    stop_n    <=0;
                 end
                 SB_fml: begin
                     branch  <=0;
@@ -350,7 +377,7 @@ module Controller(
                         default: extmode2<=3'b000;
                     endcase
             
-                    stop    <=0;
+                    stop_n    <=0;
                 end
                 ECALL: begin
                     branch  <=0;
@@ -365,7 +392,7 @@ module Controller(
                     extmode1<=0;
                     extmode2<=0;
 
-                    stop    <=1;
+                    stop_n    <=1;
                 end
                 default: begin          //包含空指令
                     branch  <=0;
@@ -380,7 +407,7 @@ module Controller(
                     extmode1<=0;
                     extmode2<=0;
 
-                    stop    <=0;
+                    stop_n    <=0;
                 end
             endcase
         end
