@@ -43,28 +43,28 @@ module Shifter(
                 r_mid={extn,a[31:1]};
             end
             3'd2: begin
-                l_mid={a[29:0],2*{1'b0}};
-                r_mid={2*{extn},a[31:2]};
+                l_mid={a[29:0],{2{1'b0}}};
+                r_mid={{2{extn}},a[31:2]};
             end
             3'd3: begin
-                l_mid={a[28:0],3*{1'b0}};
-                r_mid={3*{extn},a[31:3]};
+                l_mid={a[28:0],{3{1'b0}}};
+                r_mid={{3{extn}},a[31:3]};
             end
             3'd4: begin
-                l_mid={a[27:0],4*{1'b0}};
-                r_mid={4*{extn},a[31:4]};
+                l_mid={a[27:0],{4{1'b0}}};
+                r_mid={{4{extn}},a[31:4]};
             end
             3'd5: begin
-                l_mid={a[26:0],5*{1'b0}};
-                r_mid={5*{extn},a[31:5]};
+                l_mid={a[26:0],{5{1'b0}}};
+                r_mid={{5{extn}},a[31:5]};
             end
             3'd6: begin
-                l_mid={a[25:0],6*{1'b0}};
-                r_mid={6*{extn},a[31:6]};
+                l_mid={a[25:0],{6{1'b0}}};
+                r_mid={{6{extn}},a[31:6]};
             end
             3'd7: begin
-                l_mid={a[24:0],7*{1'b0}};
-                r_mid={7*{extn},a[31:7]};
+                l_mid={a[24:0],{7{1'b0}}};
+                r_mid={{7{extn}},a[31:7]};
             end
         endcase
         
@@ -74,16 +74,16 @@ module Shifter(
                 rshift_s=r_mid;
             end
             3'd1: begin
-                lshift_s={l_mid[23:0],8*{1'b0}};
-                rshift_s={8*{extn},r_mid[31:8]};
+                lshift_s={l_mid[23:0],{8{1'b0}}};
+                rshift_s={{8{extn}},r_mid[31:8]};
             end
             3'd2: begin
-                lshift_s={l_mid[15:0],16*{1'b0}};
-                rshift_s={16*{extn},r_mid[31:16]};
+                lshift_s={l_mid[15:0],{16{1'b0}}};
+                rshift_s={{16{extn}},r_mid[31:16]};
             end
             3'd3: begin
-                lshift_s={l_mid[7:0],24*{1'b0}};
-                rshift_s={24*{extn},r_mid[31:24]};
+                lshift_s={l_mid[7:0],{24{1'b0}}};
+                rshift_s={{24{extn}},r_mid[31:24]};
             end
         endcase
     end

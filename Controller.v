@@ -396,11 +396,11 @@ module Controller(
             extmode1_m  <= 0   ;
             sp_sign     <= 0   ;    
         end
-        else if(flush) begin
+        else if(flush) begin    //清除f,d,e段，保留m
             MemWrite_m  <= 0   ;
             MemtoReg_m  <= 0   ;
             RegWrite_m  <= 0   ;
-            RegWrite_w  <= 0   ;
+            RegWrite_w  <= RegWrite_m   ;
             extmode1_m  <= 0   ;
             sp_sign     <= 0   ;    
         end

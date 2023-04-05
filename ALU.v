@@ -21,6 +21,7 @@
 
 
 module ALU(
+    input clk,
     input   [31:0]      a0      ,
     input   [31:0]      b0      ,
     input   [31:0]      imm     ,
@@ -40,6 +41,11 @@ module ALU(
     output reg [31:0]   result  ,
     output     [2:0]    zero    
     );
+    reg [31:0] md_n;
+
+    always @(posedge clk) begin
+        md_n<=md;
+    end
 
     parameter ADD      = 3'b000;
     parameter SUB      = 3'b000;
@@ -104,13 +110,13 @@ module ALU(
             2'b00: a00=a0;
             2'b01: a00=y;
             2'b10: a00=md;
-            default: a00=a0;
+            2'b11: a00=md_n;
         endcase
         case (bfwd)
             2'b00: b00=b0;
             2'b01: b00=y;
             2'b10: b00=md;
-            default: b00=b0;
+            2'b11: b00=md_n;
         endcase
 
         //oprand

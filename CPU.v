@@ -79,6 +79,9 @@ module CPU(
     wire [31:0]         imm_0;
     
     reg [31:0]          b_m;
+    // reg [4:0]           b_m_0;
+    reg [4:0] md_n;
+
     reg [4:0]          rs1;
     reg [4:0]          rs2;
     reg [4:0]          rd;
@@ -113,7 +116,7 @@ module CPU(
             y<=0;
             md<=0;
             imm<=0;
-            b_m<=0;
+            // b_m_0<=0;
             rs1<=0;
             rs2<=0;
             rd <=0;
@@ -121,37 +124,39 @@ module CPU(
             rd_w<=0;
             pc_d<=0;
             pc_e<=0;
+            md_n<=0;
         end
-        else if(eflush||flush) begin
-            // ir<=0;
+        else if(flush) begin    //清除f,d,e段，保留m
+            ir<=0;
             y<=0;
-            // md<=0;
+            if(MemtoReg) md<=md_read;
+            else md<=y;
+            md_n<=md;
             imm<=0;
-            // b_m<=0;
+            // b_m_0<=0; //e段结果
             rs1<=0;
             rs2<=0;
             rd <=0;
-            
+            rd_m<=0;
+            rd_w<=rd_m;
             pc_d<=0;
-            if(flush) begin //flush优先
-                ir<=0;
-                md<=0;
-                b_m<=0;
-                rd_m<=0;
-                rd_w<=0;
-                pc_e<=0;
-            end
-            else begin
-                ir<=ir; //dstall
-
-                if(MemtoReg) md<=md_read;
-                else md<=y;
-
-                b_m<=b;
-                rd_m<=rd;
-                rd_w<=rd_m;
-                pc_e<=pc_d;  
-            end
+            pc_e<=0;   
+        end
+        else if(eflush) begin   //停止f段，清除d段，保留后三段
+            ir<=ir;
+            y<=result;
+            if(MemtoReg) md<=md_read;
+            else md<=y;
+            md_n<=md;
+            imm<=0;
+            // b_m_0<=b;
+            rs1<=0;
+            rs2<=0;
+            rd <=0;
+            rd_m<=rd;
+            rd_w<=rd_m;
+            pc_d<=pc_d;
+            pc_e<=0;   //d段
         end
         else begin
             ir<=inst;
@@ -159,6 +164,7 @@ module CPU(
 
             if(MemtoReg) md<=md_read;
             else md<=y;
+            md_n<=md;
 
             imm<=imm_0;
 
@@ -166,17 +172,27 @@ module CPU(
             rs2<=ir[24:20];
             rd<=ir[11:7];
 
-            b_m<=b;
+            // b_m_0<=b;
             rd_m<=rd;
             rd_w<=rd_m;
             pc_d<=pc;
-            pc_e<=pc_d;            
+            pc_e<=pc_d;     
         end
+    end
+
+    always @(*) begin
+        case (bfwd)
+            2'b00: b_m=b;
+            // 2'b00: b_m=b_m_0;
+            2'b01: b_m=y;
+            2'b10: b_m=md;
+            2'b11: b_m=md_n;
+        endcase        
     end
 
 PC_Controller pc_controller(
     .imm     (imm    ),
-    .pc_e    (pc_e   ),
+    .pc_d    (pc_e   ),
     .y       (y      ),
     .zero    (zero   ),
     .branch  (branch ),
@@ -186,7 +202,8 @@ PC_Controller pc_controller(
     .npc     (npc    ),
 
     .fstall  (fstall ),
-    .flush   (flush  )
+    .flush   (flush  ),
+    .stop    (stop   )
 );
 
 ALU alu(
@@ -204,7 +221,9 @@ ALU alu(
     .sp_sign(sp_sign),
     .ALUOP  (ALUOP  ),
     .result (result ),
-    .zero   (zero   )
+    .zero   (zero   ),
+
+    .clk    (clk)
 );
 
 Controller controller(
@@ -299,7 +318,7 @@ RegisterFile rf(
     // assign rf_we=rf_dcp_we | RegWrite;
     assign ra=rf_dcp_rd?rf_addr:ir[19:15];
     assign rf_out=a0;
-    assign wa=ir[11:7];
+    assign wa=rd_w;
     assign wdto_rf=rf_wd;
     assign wdto_rf=rf_wd;
     assign rf_we=RegWrite;
@@ -324,7 +343,10 @@ ForwardingUnit forwardunit(
     .RegWrite_m  (RegWrite_m  ),
     .RegWrite_w  (RegWrite    ),
     .afwd        (afwd        ),
-    .bfwd        (bfwd        )
+    .bfwd        (bfwd        ),
+    .eflush      (eflush      ),
+
+    .clk    (clk)
 );
 
 HarzardUnit harzardunit(
